@@ -13,44 +13,33 @@ import (
 	"strings"
 )
 
-var port *string
-var configFile *string
 var config ProxyConfig
+var port *string
 
-type Prox struct {
-	target *url.URL
-	proxy  *httputil.ReverseProxy
+type Proxy struct {
+	backend *url.URL
+	proxy   *httputil.ReverseProxy
 }
 type Host struct {
-	Host   string `json:"host"`
-	Target string `json:"target"`
+	Host    string `json:"host"`
+	Backend string `json:"backend"`
 }
 type ProxyConfig struct {
 	DefaultPort string `json:"defaultPort"`
 	Hosts       []Host `json:"hosts"`
 }
 
-func NewProxy(target string) *Prox {
-	url, _ := url.Parse(target)
+func NewProxy(backend string) *Proxy {
+	url, _ := url.Parse(backend)
 
-	return &Prox{target: url, proxy: httputil.NewSingleHostReverseProxy(url)}
-}
-
-func readConfig(fileName string) {
-	jsonFile, err := os.Open("config.json")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer jsonFile.Close()
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &config)
+	return &Proxy{backend: url, proxy: httputil.NewSingleHostReverseProxy(url)}
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
 	hostHeader := r.Host
 	for i := range config.Hosts {
-		if strings.Contains(config.Hosts[i].Host, hostHeader) {
-			proxy := NewProxy(config.Hosts[i].Target)
+		if strings.Contains(hostHeader, config.Hosts[i].Host) {
+			proxy := NewProxy(config.Hosts[i].Backend)
 			w.Header().Set("X-GoProxy", "GoProxy")
 			proxy.proxy.ServeHTTP(w, r)
 			return
@@ -70,12 +59,21 @@ func main() {
 		defaultConfigUsage = "default config path, './config.json'"
 	)
 
+	var configFile *string
+
 	// flags
-	port = flag.String("port", "80", defaultPortUsage)
+	port = flag.String("port", "9000", defaultPortUsage)
 	configFile = flag.String("config", defaultConfig, defaultConfigUsage)
 	flag.Parse()
 
-	readConfig(*configFile)
+	//read config file
+	jsonFile, err := os.Open(*configFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer jsonFile.Close()
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(byteValue, &config)
 
 	fmt.Println("server will run on :", *port)
 
