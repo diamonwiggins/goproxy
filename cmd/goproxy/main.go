@@ -38,7 +38,7 @@ func main() {
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	json.Unmarshal(byteValue, &config)
 
-	fmt.Println("server will run on :", *port)
+	fmt.Println("goproxy running on :", *port)
 
 	http.HandleFunc("/proxyServer", ProxyServer)
 
@@ -59,8 +59,7 @@ func rootHandle(w http.ResponseWriter, r *http.Request) {
 
 			currentTime := time.Now().UTC()
 			statusCode := lrw.statusCode
-			//fmt.Println(currentTime.Format("2006-01-02 15:04:05"), "-", "\""+r.Method+" "+r.URL.Path+" "+r.Proto+"\"", "\""+r.Header.Get("User-Agent")+"\"", "-", r.RemoteAddr)
-			fmt.Printf("%s - \"%s %s %s %d\" \"%s\" - %s", currentTime.Format("2006-01-02 15:04:05"), r.Method, r.URL.Path, r.Proto, statusCode, r.Header.Get("User-Agent"), r.RemoteAddr)
+			fmt.Printf("%s - \"%s %s %s %d\" \"%s\" - %s\n", currentTime.Format("2006-01-02 15:04:05"), r.Method, r.URL.Path, r.Proto, statusCode, r.Header.Get("User-Agent"), r.RemoteAddr)
 			return
 		}
 	}
